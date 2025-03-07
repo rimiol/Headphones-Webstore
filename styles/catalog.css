@@ -1,0 +1,187 @@
+/* Основной макет */
+.catalog {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 85px;
+}
+
+/* Поиск */
+.sidebar-search-container {
+    margin-bottom: 15px;
+}
+
+.sidebar-search {        
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #888888;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Категории фильтров */
+.sidebar-filter-category {
+    margin-bottom: 20px;
+}
+
+.sidebar-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.sidebar-list {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    cursor: pointer;
+}
+
+.sidebar-list input[type="checkbox"] {
+    transform: scale(1.2);
+}
+
+.sidebar-number-input {
+    width: 100px;
+    padding: 5px;
+    margin-right: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Кнопка применения фильтров */
+.sidebar-submit {
+    width: 100%;
+    padding: 10px;
+    background: #1185d7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+}
+
+.sidebar-submit:hover {
+    background: #0f6bbf;
+}
+
+/* Стили для каталога товаров */
+.catalog-products {
+    padding-right: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: left;
+    padding: 20px;
+}
+
+/* Стили для карточек товаров */
+.product-item {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    border: 3px solid #f4f4f4;
+    width: calc(25% - 20px); /* 4 товара в ряд, с отступами */
+    text-align: center;
+    box-shadow: none; /* Убрали тень */
+}
+
+.product-item img {
+    max-width: 50%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.product-item p {
+    font-size: 16px;
+    color: #333;
+    margin: 5px 0;
+}
+
+
+/* Кнопка добавления в корзину */
+.add-to-cart {
+    background-color: #1185d7;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+/* Основной контейнер каталога */
+.catalog-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+
+/* Стили для блока фильтров (левая колонка) */
+.catalog-sidebar {
+    width: 250px;
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Блок для карточек товаров */
+.catalog-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Каталог товаров */
+.catalog-products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+/* Пагинация */
+.pagination {
+    bottom: 0;         /* Зафиксировать на дне */
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: auto; /* Отступ сверху */
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    width: 100%;
+}
+
+/* Кнопки пагинации */
+.page-btn {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 12px 18px; 
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+/* Убираем стиль ссылок на карточках товаров */
+.catalog-products .product-link {
+    text-decoration: none; /* Убираем подчеркивание */
+    color: inherit; /* Наследуем цвет родителя (к примеру, черный или тот, который вам нужен) */
+}
+
+/* Дополнительно можно убрать фиолетовый цвет при наведении */
+.catalog-products .product-link:hover {
+    color: inherit;
+    text-decoration: none;
+}

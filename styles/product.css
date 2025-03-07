@@ -1,0 +1,153 @@
+/* Основной контейнер страницы товара */
+.product-page {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 40px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Блок с изображением */
+.product-image-box {
+    flex: 1;
+    padding-top: 140px;
+    max-width: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.product-main-image {
+    width: 100%;
+    max-width: 350px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Блок с заголовком, ценой и характеристиками */
+.product-title-box {
+    margin-top: 60px;
+    flex: 2;
+    max-width: 600px;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Центрирование по горизонтали */
+}
+
+.product-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.product-price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1185d7;
+    margin-bottom: 15px;
+}
+
+/* Список характеристик */
+.product-parameters-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.product-parameter {
+    font-size: 16px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    width: 48%;
+}
+
+.product-parameter-value {
+    font-weight: normal;
+    display: block;
+    color: #555;
+}
+
+/* Кнопка "В корзину" */
+.product-submit-btn {
+    display: block;
+    width: 50%; /* Ширина кнопки */
+    padding: 12px;
+    background: #1185d7;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-top: 15px;
+}
+
+.product-submit-btn:hover {
+    background: #1185d7;
+}
+
+/* Заголовок описания */
+.description-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 40px;
+    text-align: center;
+    width: 100%;
+}
+
+/* Блок описания */
+.product-description {
+    max-width: 900px;
+    text-align: justify;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+}
+
+.product-description p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+/* Таблица характеристик */
+.product-characteristics {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.product-characteristics th, 
+.product-characteristics td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.product-characteristics th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+
+.product-characteristics tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+.product-characteristics tr:hover {
+    background: #f1f1f1;
+}

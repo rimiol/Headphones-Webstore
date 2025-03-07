@@ -1,0 +1,47 @@
+.add-item-container {
+    max-width: 500px;
+    margin: 50px auto;
+    text-align: center;
+}
+
+.add-item-container h1 {
+    font-family: 'Minerva Modern', sans-serif;
+    font-size: 24px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.add-item-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.add-item-form input,
+.add-item-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.add-item-form textarea {
+    resize: vertical;
+    height: 100px;
+}
+
+.add-item-form button {
+    background-color: #1185d7;
+    color: white;
+    padding: 10px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.add-item-form button:hover {
+    background-color: #444;
+}

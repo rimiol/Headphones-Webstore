@@ -1,0 +1,87 @@
+main {
+    padding: 40px 15px; /* Уменьшаем боковые отступы */
+    max-width: 1600px;  /* Существенно увеличиваем максимальную ширину */
+    margin: 0 auto;
+    width: 100%;        /* Занимаем всю доступную ширину */
+}
+
+.profile-header {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    /* Убираем центрирование текста */
+}
+
+.profile-info {
+    display: flex;
+    align-items: flex-start; /* Меняем выравнивание на левый край */
+    flex-direction: column;
+    gap: 10px;
+}
+
+.user-details p {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #555;
+    text-align: left; /* Выравниваем текст по левому краю */
+}
+
+.edit-profile {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #1185d7;
+    color: white;
+    font-size: 14px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.edit-profile:hover {
+    background-color: #1185d7;
+}
+
+.order-history {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.order-history h2 {
+    font-size: 26px;
+    margin-bottom: 20px;
+    color: #1185d7;
+}
+
+.orders {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.order {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.order h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.order p, .order ul {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #555;
+
+    list-style-type: none;
+    margin: 0; 
+    padding: 0; 
+}
