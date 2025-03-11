@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/catalog.css">
     <link href="https://fonts.googleapis.com/css2?family=Minerva+Modern:ital,wght@1,700&display=swap" rel="stylesheet">
-    <script src="js/filtration_script.js"></script>
+    <!--<script src="js/filtration_script.js"></script>-->
 </head>
 <body>
     <header>
@@ -79,7 +79,7 @@
         
             <!-- Каталог товаров -->
             <div class="catalog-content">
-                <div class="catalog-products">
+                <div class="catalog-products" id="productContainer">
                     <div class="product-item">
                         <img src="images/headphones/audio_technica_ath_m50x.webp" alt="Наушники Audio-Technica ATH-M50x">
                         <p>Audio-Technica ATH-M50x</p>
@@ -117,7 +117,7 @@
                 </div>
                 
                 <!-- Пагинация -->
-                <div class="pagination">
+                <div class="pagination" id="pagination">
                     <button class="page-btn">1</button>
                     <button class="page-btn">2</button>
                     <button class="page-btn">3</button>
@@ -148,5 +148,7 @@
             <p class="footer-copy">&copy; 2024 United Audio. Все права защищены.</p>
         </div>
     </footer>
+
+    <script src="js/catalog.js"></script>
 </body>
 </html>

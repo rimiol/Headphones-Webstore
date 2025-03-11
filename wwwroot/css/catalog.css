@@ -3,6 +3,7 @@
     display: flex;
     align-items: flex-start;
     margin-top: 85px;
+    max-width: 100%;
 }
 
 /* Поиск */
@@ -93,8 +94,9 @@
 }
 
 .product-item img {
-    max-width: 50%;
-    height: auto;
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
     border-radius: 8px;
     margin-bottom: 15px;
 }
@@ -123,6 +125,11 @@
     display: flex;
     gap: 20px;
     padding: 20px;
+    position: relative;
+    overflow: auto;
+    min-width: 100%;
+    max-width: 100%;
+    min-height: calc(100vh - 120px); /* Высота экрана минус высота шапки и отступы */
 }
 
 /* Стили для блока фильтров (левая колонка) */
@@ -132,41 +139,48 @@
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+    position: relative;
 }
 
 /* Блок для карточек товаров */
 .catalog-content {
+    max-width: 100%;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 /* Каталог товаров */
 .catalog-products {
+    max-width: 100%;
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
     justify-content: flex-start;
 }
 
-/* Пагинация */
+/* Контейнер для пагинации */
 .pagination {
-    bottom: 0;         /* Зафиксировать на дне */
+    margin-top: auto;
+    bottom: 20px;
+    align-items: center;
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-top: auto; /* Отступ сверху */
+    width: 100%;
     padding-top: 20px;
     border-top: 1px solid #ddd;
-    width: 100%;
+    z-index: 10;
 }
 
 /* Кнопки пагинации */
 .page-btn {
     background: #f0f0f0;
     border: 1px solid #ccc;
-    padding: 12px 18px; 
+    padding: 12px 18px;
     font-size: 18px;
     font-weight: bold;
     border-radius: 6px;
