@@ -1,10 +1,28 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-    loadProducts(1); // Загружаем первую страницу при загрузке документа
+    loadProducts(1);
 });
 
+// Добавляем обработчик поиска
+const searchInput = document.querySelector('.sidebar-search');
+let searchTimer;
+
+searchInput.addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadProducts(1), 300);
+});
+
+// Модифицируем функцию загрузки товаро
 function loadProducts(page) {
-    fetch(`/api/products?page=${page}`)
-        .then(response => response.json())
+
+    const searchTerm = document.querySelector('.sidebar-search').value.trim();
+
+    fetch(`/api/products?page=${page}&searchTerm=${encodeURIComponent(searchTerm)}`)
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
         .then(data => {
             // Обновляем контейнер с товарами
             const container = document.getElementById('productContainer');
@@ -24,7 +42,10 @@ function loadProducts(page) {
             // Обновляем пагинацию
             generatePagination(data.totalPages, page);
         })
-        .catch(error => console.error('Ошибка при загрузке товаров:', error));
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert(error.error || 'Произошла ошибка при загрузке товаров');
+        });
 }
 
 function generatePagination(totalPages, currentPage) {

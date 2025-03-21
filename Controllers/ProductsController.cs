@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Headphones_Webstore.Models;
+using Microsoft.AspNetCore.Mvc;
+
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -8,7 +10,6 @@ using Headphones_Webstore.Models;
 
 namespace Headphones_Webstore.Controllers
 {
-    //localhost:xxxx/api/products
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -20,11 +21,17 @@ namespace Headphones_Webstore.Controllers
             _configuration = configuration;
         }
 
-        // GET: api/products?page=1
+        // GET: api/products?page=1&brand=Sony&connectionType=Bluetooth&minPrice=1000&maxPrice=5000
         [HttpGet]
-        public async Task<IActionResult> GetProducts([FromQuery] int page = 1)
+        public async Task<IActionResult> GetProducts(
+            [FromQuery] int page = 1,
+            [FromQuery] string? brand = null,
+            [FromQuery] string? connectionType = null,
+            [FromQuery] decimal? minPrice = null,
+            [FromQuery] decimal? maxPrice = null,
+            [FromQuery] string? searchTerm = null)
         {
-            if(page < 1)
+            if (page < 1)
             {
                 return BadRequest("Номер страницы должен быть больше 0");
             }
@@ -42,15 +49,21 @@ namespace Headphones_Webstore.Controllers
                     await conn.OpenAsync();
 
                     string query = @"
-                        SELECT ProductID, Name, Description, ImageURL, Price, ConnectionType, WearingStyle, Brand
-                        FROM Products
-                        ORDER BY ProductID
-                        OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
+                    SELECT ProductID, Name, Description, ImageURL, Price, ConnectionType, WearingStyle, Brand
+                    FROM Products
+                    WHERE (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')
+                    ORDER BY ProductID
+                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
+                        cmd.Parameters.AddWithValue("@brand", (object)brand ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@connectionType", (object)connectionType ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@minPrice", (object)minPrice ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@maxPrice", (object)maxPrice ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@offset", offset);
                         cmd.Parameters.AddWithValue("@pageSize", pageSize);
+                        cmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : searchTerm);
 
                         using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
                         {
@@ -72,10 +85,20 @@ namespace Headphones_Webstore.Controllers
                         }
                     }
 
-                    string countQuery = "SELECT COUNT(*) FROM Products";
+                    // Получение общего числа товаров для расчёта количества страниц
+                    string countQuery = @"
+                    SELECT COUNT(*) 
+                    FROM Products
+                    WHERE (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')";
+
                     int totalProducts = 0;
                     using (SqlCommand countCmd = new SqlCommand(countQuery, conn))
                     {
+                        countCmd.Parameters.AddWithValue("@brand", (object)brand ?? DBNull.Value);
+                        countCmd.Parameters.AddWithValue("@connectionType", (object)connectionType ?? DBNull.Value);
+                        countCmd.Parameters.AddWithValue("@minPrice", (object)minPrice ?? DBNull.Value);
+                        countCmd.Parameters.AddWithValue("@maxPrice", (object)maxPrice ?? DBNull.Value);
+                        countCmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : searchTerm);
                         totalProducts = (int)await countCmd.ExecuteScalarAsync();
                     }
 
@@ -83,15 +106,16 @@ namespace Headphones_Webstore.Controllers
 
                     var result = new
                     {
-                        Products = products,
+                        TotalProducts = totalProducts,
+                        Page = page,
+                        PageSize = pageSize,
                         TotalPages = totalPages,
-                        CurrentPage = page
+                        Products = products
                     };
 
                     return Ok(result);
 
                 }
-                
             }
             catch (Exception ex)
             {
