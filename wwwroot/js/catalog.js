@@ -1,26 +1,27 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+﻿//document.addEventListener('DOMContentLoaded', function () {
+//    loadProducts(1);
+//});
+
+document.addEventListener('DOMContentLoaded', function () {
     loadProducts(1);
+    fetch('/api/cart/count')
+        .then(response => response.json())
+        .then(data => updateCartCounter(data.totalItems))
+        .catch(() => updateCartCounter(0));
 });
+
+function updateCartCounter(count) {
+    const cartLink = document.querySelector('a[href="cart.html"]');
+    cartLink.innerHTML = count > 0
+        ? `Корзина (${count})`
+        : 'Корзина';
+}
 
 function getSelectedValues(selector) {
     return Array.from(document.querySelectorAll(selector))
         .filter(checkbox => checkbox.checked)
         .map(checkbox => checkbox.value || checkbox.nextSibling.textContent.trim());
 }
-
-//function getFilters() {
-//    return {
-//        connectionType: Array.from(document.querySelectorAll('.sidebar-filter-category:nth-child(1) input[type="checkbox"]:checked'))
-//            .map(cb => cb.value),
-//        wearingStyle: Array.from(document.querySelectorAll('.sidebar-filter-category:nth-child(2) input[type="checkbox"]:checked'))
-//            .map(cb => cb.value),
-//        brands: Array.from(document.querySelectorAll('#brand-filters input[type="checkbox"]:checked'))
-//            .map(cb => cb.value),
-//        minPrice: document.getElementById('price-from').value || null,
-//        maxPrice: document.getElementById('price-to').value || null,
-//        searchTerm: document.querySelector('.sidebar-search').value.trim()
-//    };
-//}
 
 function getFilters() {
     // Используем индексы категорий
@@ -81,10 +82,22 @@ function loadProducts(page) {
         });
 }
 
+//function updateProductList(products) {
+//    const container = document.getElementById('productContainer');
+//    container.innerHTML = products.map(product => `
+//        <div class="product-item">
+//            <img src="${product.imageURL}" alt="${product.name}">
+//            <p>${product.name}</p>
+//            <p>Цена: ${product.price} ₽</p>
+//            <button class="add-to-cart">Добавить в корзину</button>
+//        </div>
+//    `).join('');
+//}
+
 function updateProductList(products) {
     const container = document.getElementById('productContainer');
     container.innerHTML = products.map(product => `
-        <div class="product-item">
+        <div class="product-item" data-product-id="${product.productId}">
             <img src="${product.imageURL}" alt="${product.name}">
             <p>${product.name}</p>
             <p>Цена: ${product.price} ₽</p>
@@ -92,6 +105,32 @@ function updateProductList(products) {
         </div>
     `).join('');
 }
+
+document.getElementById('productContainer').addEventListener('click', function (e) {
+    if (e.target.classList.contains('add-to-cart')) {
+        const productItem = e.target.closest('.product-item');
+        const productId = productItem.dataset.productId; // Нужно добавить data-атрибут в разметку
+
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ productId: parseInt(productId) })
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка добавления');
+                return response.json();
+            })
+            .then(data => {
+                updateCartCounter(data.totalItems);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+    }
+});
 
 //ПАГИНАЦИЯ
 function generatePagination(totalPages, currentPage) {
