@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/catalog.css">
     <link href="https://fonts.googleapis.com/css2?family=Minerva+Modern:ital,wght@1,700&display=swap" rel="stylesheet">
-    <!--<script src="js/filtration_script.js"></script>-->
 </head>
 <body>
     <header>
@@ -42,17 +41,17 @@
 
                     <div class="sidebar-title">По способу подключения</div>
                     <ul class="sidebar-list">
-                        <li><input type="checkbox">Проводные</li>
-                        <li><input type="checkbox">Беспроводные</li>
+                        <li><input type="checkbox" value="Проводные">Проводные</li>
+                        <li><input type="checkbox" value="Беспроводные">Беспроводные</li>
                     </ul>
                 </div>
 
                 <div class="sidebar-filter-category">
                     <div class="sidebar-title">По способу ношения</div>
                     <ul class="sidebar-list">
-                        <li><input type="checkbox">Полноразмерные</li>
-                        <li><input type="checkbox">Накладные</li>
-                        <li><input type="checkbox">Внутриканальные</li>
+                        <li><input type="checkbox" value="Полноразмерные">Полноразмерные</li>
+                        <li><input type="checkbox" value="Накладные">Накладные</li>
+                        <li><input type="checkbox" value="Внутриканальные">Внутриканальные</li>
                     </ul>
                 </div>
 
@@ -79,42 +78,7 @@
 
             <!-- Каталог товаров -->
             <div class="catalog-content">
-                <div class="catalog-products" id="productContainer">
-                    <div class="product-item">
-                        <img src="images/headphones/audio_technica_ath_m50x.webp" alt="Наушники Audio-Technica ATH-M50x">
-                        <p>Audio-Technica ATH-M50x</p>
-                        <p>Цена: 12 000 ₽</p>
-                        <button class="add-to-cart">Добавить в корзину</button>
-                    </div>
-
-                    <div class="product-item">
-                        <img src="images/headphones/sony_wh1000xm5_black.webp" alt="Наушники Sony WH-1000XM5">
-                        <p>Sony WH-1000XM5</p>
-                        <p>Цена: 29 000 ₽</p>
-                        <button class="add-to-cart">Добавить в корзину</button>
-                    </div>
-
-                    <div class="product-item">
-                        <img src="images/headphones/sony_mdr_7506_1.webp" alt="Наушники Sony MDR-7506">
-                        <p>Sony MDR-7506</p>
-                        <p>Цена: 14 000 ₽</p>
-                        <button class="add-to-cart">Добавить в корзину</button>
-                    </div>
-
-                    <div class="product-item">
-                        <img src="images/headphones/Beyerdynamic_DT_770_PRO_000.webp" alt="Наушники Beyerdynamic DT 770 Pro">
-                        <p>Beyerdynamic DT 770 Pro</p>
-                        <p>Цена: 16 000 ₽</p>
-                        <button class="add-to-cart">Добавить в корзину</button>
-                    </div>
-
-                    <div class="product-item">
-                        <img src="images/headphones/sennheiser_momentum4_white_00.webp" alt="Наушники Sennheiser HD 280 PRO">
-                        <p>Sennheiser HD 280 PRO</p>
-                        <p>Цена: 11 000 ₽</p>
-                        <button class="add-to-cart">Добавить в корзину</button>
-                    </div>
-                </div>
+                <div class="catalog-products" id="productContainer"></div>
 
                 <!-- Пагинация -->
                 <div class="pagination" id="pagination">
@@ -148,7 +112,7 @@
             <p class="footer-copy">&copy; 2024 United Audio. Все права защищены.</p>
         </div>
     </footer>
-
+    <!--Подключение скриптов-->
     <script src="js/catalog.js"></script>
 </body>
 </html>

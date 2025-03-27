@@ -1,12 +1,6 @@
 ﻿using Headphones_Webstore.Models;
 using Microsoft.AspNetCore.Mvc;
-
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Headphones_Webstore.Models;
 
 namespace Headphones_Webstore.Controllers
 {
@@ -21,16 +15,22 @@ namespace Headphones_Webstore.Controllers
             _configuration = configuration;
         }
 
-        // GET: api/products?page=1&brand=Sony&connectionType=Bluetooth&minPrice=1000&maxPrice=5000
         [HttpGet]
         public async Task<IActionResult> GetProducts(
             [FromQuery] int page = 1,
             [FromQuery] string? brand = null,
             [FromQuery] string? connectionType = null,
+            [FromQuery] string? wearingStyle = null,
             [FromQuery] decimal? minPrice = null,
             [FromQuery] decimal? maxPrice = null,
             [FromQuery] string? searchTerm = null)
         {
+
+            connectionType = string.IsNullOrEmpty(connectionType) ? null : connectionType;
+            wearingStyle = string.IsNullOrEmpty(wearingStyle) ? null : wearingStyle;
+            brand = string.IsNullOrEmpty(brand) ? null : brand;
+            Console.WriteLine($"Received filters: connectionType={connectionType}, wearingStyle={wearingStyle}");
+
             if (page < 1)
             {
                 return BadRequest("Номер страницы должен быть больше 0");
@@ -51,19 +51,26 @@ namespace Headphones_Webstore.Controllers
                     string query = @"
                     SELECT ProductID, Name, Description, ImageURL, Price, ConnectionType, WearingStyle, Brand
                     FROM Products
-                    WHERE (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')
+                    WHERE 
+                    (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')
+                    AND (@brand IS NULL OR Brand IN (SELECT value FROM STRING_SPLIT(@brand, ',')))
+                    AND (@connectionType IS NULL OR ConnectionType IN (SELECT value FROM STRING_SPLIT(@connectionType, ',')))
+                    AND (@wearingStyle IS NULL OR WearingStyle IN (SELECT value FROM STRING_SPLIT(@wearingStyle, ',')))
+                    AND (@minPrice IS NULL OR Price >= @minPrice)
+                    AND (@maxPrice IS NULL OR Price <= @maxPrice)
                     ORDER BY ProductID
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        cmd.Parameters.AddWithValue("@brand", (object)brand ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@connectionType", (object)connectionType ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@minPrice", (object)minPrice ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@maxPrice", (object)maxPrice ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@brand", string.IsNullOrEmpty(brand) ? DBNull.Value : (object)brand);
+                        cmd.Parameters.AddWithValue("@connectionType", string.IsNullOrEmpty(connectionType) ? DBNull.Value : (object)connectionType);
+                        cmd.Parameters.AddWithValue("@wearingStyle", string.IsNullOrEmpty(wearingStyle) ? DBNull.Value : (object)wearingStyle);
+                        cmd.Parameters.AddWithValue("@minPrice", minPrice ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@maxPrice", maxPrice ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@offset", offset);
                         cmd.Parameters.AddWithValue("@pageSize", pageSize);
-                        cmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : searchTerm);
+                        cmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : (object)searchTerm);
 
                         using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
                         {
@@ -89,16 +96,24 @@ namespace Headphones_Webstore.Controllers
                     string countQuery = @"
                     SELECT COUNT(*) 
                     FROM Products
-                    WHERE (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')";
+                    WHERE 
+                    (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')
+                    AND (@brand IS NULL OR Brand IN (SELECT value FROM STRING_SPLIT(@brand, ',')))
+                    AND (@connectionType IS NULL OR ConnectionType IN (SELECT value FROM STRING_SPLIT(@connectionType, ',')))
+                    AND (@wearingStyle IS NULL OR WearingStyle IN (SELECT value FROM STRING_SPLIT(@wearingStyle, ',')))
+                    AND (@minPrice IS NULL OR Price >= @minPrice)
+                    AND (@maxPrice IS NULL OR Price <= @maxPrice)";
 
                     int totalProducts = 0;
                     using (SqlCommand countCmd = new SqlCommand(countQuery, conn))
                     {
-                        countCmd.Parameters.AddWithValue("@brand", (object)brand ?? DBNull.Value);
-                        countCmd.Parameters.AddWithValue("@connectionType", (object)connectionType ?? DBNull.Value);
-                        countCmd.Parameters.AddWithValue("@minPrice", (object)minPrice ?? DBNull.Value);
-                        countCmd.Parameters.AddWithValue("@maxPrice", (object)maxPrice ?? DBNull.Value);
-                        countCmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : searchTerm);
+                        countCmd.Parameters.AddWithValue("@brand", string.IsNullOrEmpty(brand) ? DBNull.Value : (object)brand);
+                        countCmd.Parameters.AddWithValue("@connectionType", string.IsNullOrEmpty(connectionType) ? DBNull.Value : (object)connectionType);
+                        countCmd.Parameters.AddWithValue("@wearingStyle", string.IsNullOrEmpty(wearingStyle) ? DBNull.Value : (object)wearingStyle);
+                        countCmd.Parameters.AddWithValue("@minPrice", minPrice ?? (object)DBNull.Value);
+                        countCmd.Parameters.AddWithValue("@maxPrice", maxPrice ?? (object)DBNull.Value);
+                        countCmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : (object)searchTerm);
+
                         totalProducts = (int)await countCmd.ExecuteScalarAsync();
                     }
 
@@ -119,7 +134,11 @@ namespace Headphones_Webstore.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Внутренняя ошибка сервера: " + ex.Message);
+                return StatusCode(500, new
+                {
+                    error = "Внутренняя ошибка сервера",
+                    details = ex.Message
+                });
             }
         }
     }
