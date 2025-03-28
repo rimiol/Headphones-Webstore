@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Headphones_Webstore.Data;
+using Headphones_Webstore.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Headphones_Webstore.Controllers
@@ -9,126 +12,113 @@ namespace Headphones_Webstore.Controllers
     [ApiController]
     public class CartController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly ApplicationDbContext _context;
 
-        public CartController(IConfiguration configuration)
+        public CartController(ApplicationDbContext context)
         {
-            _configuration = configuration;
+            _context = context;
         }
 
-        // Добавление товара в корзину
         [HttpPost("add")]
         public async Task<IActionResult> AddToCart([FromBody] CartItemRequest request)
         {
-            var sessionId = await GetOrCreateSessionId();
-            if (string.IsNullOrEmpty(sessionId)) return BadRequest("Ошибка сессии");
-
             try
             {
-                using (var conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                var session = await GetOrCreateSession();
+                if (session == null) return BadRequest("Ошибка сессии");
+
+                // Проверка существования товара
+                var productExists = await _context.Products
+                    .AnyAsync(p => p.ProductId == request.ProductId);
+
+                if (!productExists) return NotFound("Товар не найден");
+
+                // Поиск существующей записи
+                var cartItem = await _context.CartItems
+                    .FirstOrDefaultAsync(ci =>
+                        ci.SessionID == session.SessionID &&
+                        ci.ProductID == request.ProductId);
+
+                if (cartItem != null)
                 {
-                    await conn.OpenAsync();
-
-                    // Проверяем существование товара
-                    var productExists = await CheckProductExists(conn, request.ProductId);
-                    if (!productExists) return NotFound("Товар не найден");
-
-                    // Обновляем или добавляем товар в корзину
-                    var query = @"
-                        MERGE INTO CartItems AS target
-                        USING (VALUES (@SessionID, @ProductID, 1)) AS source (SessionID, ProductID, Quantity)
-                        ON target.SessionID = source.SessionID AND target.ProductID = source.ProductID
-                        WHEN MATCHED THEN
-                            UPDATE SET Quantity = target.Quantity + 1
-                        WHEN NOT MATCHED THEN
-                            INSERT (SessionID, ProductID, Quantity, AddedAt)
-                            VALUES (source.SessionID, source.ProductID, source.Quantity, GETDATE());
-                        
-                        SELECT SUM(Quantity) FROM CartItems WHERE SessionID = @SessionID;";
-
-                    using (var cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@SessionID", Guid.Parse(sessionId));
-                        cmd.Parameters.AddWithValue("@ProductID", request.ProductId);
-
-                        var totalItems = (int)await cmd.ExecuteScalarAsync();
-                        return Ok(new { totalItems });
-                    }
+                    cartItem.Quantity++;
                 }
+                else
+                {
+                    _context.CartItems.Add(new CartItems
+                    {
+                        SessionID = session.SessionID,
+                        ProductID = request.ProductId,
+                        Quantity = 1,
+                        AddedAt = DateTime.UtcNow
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Получение общего количества
+                var totalItems = await _context.CartItems
+                    .Where(ci => ci.SessionID == session.SessionID)
+                    .SumAsync(ci => ci.Quantity);
+
+                return Ok(new { totalItems });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new
+                {
+                    error = "Внутренняя ошибка сервера",
+                    details = ex.Message
+                });
             }
         }
 
-        // Получение количества товаров в корзине
         [HttpGet("count")]
         public async Task<IActionResult> GetCartItemCount()
         {
-            var sessionId = await GetOrCreateSessionId();
-            if (string.IsNullOrEmpty(sessionId)) return Ok(new { totalItems = 0 });
+            var session = await GetOrCreateSession();
+            if (session == null) return Ok(new { totalItems = 0 });
 
-            try
-            {
-                using (var conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-                {
-                    await conn.OpenAsync();
+            var totalItems = await _context.CartItems
+                .Where(ci => ci.SessionID == session.SessionID)
+                .SumAsync(ci => ci.Quantity);
 
-                    var query = "SELECT SUM(Quantity) FROM CartItems WHERE SessionID = @SessionID";
-                    using (var cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@SessionID", Guid.Parse(sessionId));
-                        var result = await cmd.ExecuteScalarAsync();
-
-                        return Ok(new { totalItems = result is DBNull ? 0 : (int)result });
-                    }
-                }
-            }
-            catch
-            {
-                return Ok(new { totalItems = 0 });
-            }
+            return Ok(new { totalItems = totalItems });
         }
 
-        private async Task<string> GetOrCreateSessionId()
+        private async Task<Sessions?> GetOrCreateSession()
         {
-            var sessionCookie = Request.Cookies["SessionID"];
-            if (Guid.TryParse(sessionCookie, out var sessionId))
+            var sessionId = Request.Cookies["SessionID"];
+
+            // Существующая сессия
+            if (Guid.TryParse(sessionId, out var sessionGuid))
             {
-                return sessionCookie;
+                var existingSession = await _context.Sessions
+                    .FirstOrDefaultAsync(s => s.SessionID == sessionGuid);
+
+                if (existingSession != null) return existingSession;
             }
 
-            var newSessionId = Guid.NewGuid();
-            Response.Cookies.Append("SessionID", newSessionId.ToString(), new CookieOptions
+            // Создание новой сессии
+            var newSession = new Sessions
             {
-                Expires = DateTime.Now.AddDays(7),
+                SessionID = Guid.NewGuid(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Sessions.Add(newSession);
+            await _context.SaveChangesAsync();
+
+            Response.Cookies.Append("SessionID", newSession.SessionID.ToString(), new CookieOptions
+            {
+                Expires = DateTime.UtcNow.AddDays(7),
                 HttpOnly = true,
-                IsEssential = true
+                IsEssential = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax
             });
 
-            using (var conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-            {
-                await conn.OpenAsync();
-                var query = "INSERT INTO Sessions (SessionID, CreatedAt) VALUES (@SessionID, GETDATE())";
-                using (var cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@SessionID", newSessionId);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-            }
-
-            return newSessionId.ToString();
-        }
-
-        private async Task<bool> CheckProductExists(SqlConnection conn, int productId)
-        {
-            var query = "SELECT 1 FROM Products WHERE ProductId = @ProductId";
-            using (var cmd = new SqlCommand(query, conn))
-            {
-                cmd.Parameters.AddWithValue("@ProductId", productId);
-                return await cmd.ExecuteScalarAsync() != null;
-            }
+            return newSession;
         }
     }
 

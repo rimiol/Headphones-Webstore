@@ -1,6 +1,8 @@
 using Headphones_Webstore.Data;
 using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +21,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+builder.Services.AddLogging(loggingBuilder => {
+    loggingBuilder.AddConsole();
+    loggingBuilder.AddDebug();
+});
 
+
+var app = builder.Build();
 
 app.UseCors("AllowAll");
 
@@ -30,6 +37,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseExceptionHandler(a => a.Run(async context =>
+{
+    context.Response.ContentType = "application/json";
+    var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+    var exception = exceptionHandlerPathFeature?.Error;
+
+    await context.Response.WriteAsync(JsonSerializer.Serialize(new
+    {
+        type = "unhandled",
+        message = "Критическая ошибка",
+        details = exception?.Message
+    }));
+}));
 
 app.MapGet("/", () => Results.Redirect("/index.html"));
 

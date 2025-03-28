@@ -1,6 +1,8 @@
-﻿using Headphones_Webstore.Models;
+﻿using Headphones_Webstore.Data;
+using Headphones_Webstore.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Headphones_Webstore.Controllers
 {
@@ -8,11 +10,11 @@ namespace Headphones_Webstore.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly ApplicationDbContext _context;
 
-        public ProductsController(IConfiguration configuration)
+        public ProductsController(ApplicationDbContext context)
         {
-            _configuration = configuration;
+            _context = context;
         }
 
         [HttpGet]
@@ -25,121 +27,58 @@ namespace Headphones_Webstore.Controllers
             [FromQuery] decimal? maxPrice = null,
             [FromQuery] string? searchTerm = null)
         {
-
-            connectionType = string.IsNullOrEmpty(connectionType) ? null : connectionType;
-            wearingStyle = string.IsNullOrEmpty(wearingStyle) ? null : wearingStyle;
-            brand = string.IsNullOrEmpty(brand) ? null : brand;
-            Console.WriteLine($"Received filters: connectionType={connectionType}, wearingStyle={wearingStyle}");
-
             if (page < 1)
-            {
                 return BadRequest("Номер страницы должен быть больше 0");
-            }
 
             int pageSize = 8;
-            int offset = (page - 1) * pageSize;
-            List<Products> products = new List<Products>();
+            var query = _context.Products.AsQueryable();
 
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            // Фильтрация
+            if (!string.IsNullOrEmpty(searchTerm))
+                query = query.Where(p => p.Name.Contains(searchTerm));
 
-            try
+            if (!string.IsNullOrEmpty(brand))
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    await conn.OpenAsync();
-
-                    string query = @"
-                    SELECT ProductID, Name, Description, ImageURL, Price, ConnectionType, WearingStyle, Brand
-                    FROM Products
-                    WHERE 
-                    (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')
-                    AND (@brand IS NULL OR Brand IN (SELECT value FROM STRING_SPLIT(@brand, ',')))
-                    AND (@connectionType IS NULL OR ConnectionType IN (SELECT value FROM STRING_SPLIT(@connectionType, ',')))
-                    AND (@wearingStyle IS NULL OR WearingStyle IN (SELECT value FROM STRING_SPLIT(@wearingStyle, ',')))
-                    AND (@minPrice IS NULL OR Price >= @minPrice)
-                    AND (@maxPrice IS NULL OR Price <= @maxPrice)
-                    ORDER BY ProductID
-                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@brand", string.IsNullOrEmpty(brand) ? DBNull.Value : (object)brand);
-                        cmd.Parameters.AddWithValue("@connectionType", string.IsNullOrEmpty(connectionType) ? DBNull.Value : (object)connectionType);
-                        cmd.Parameters.AddWithValue("@wearingStyle", string.IsNullOrEmpty(wearingStyle) ? DBNull.Value : (object)wearingStyle);
-                        cmd.Parameters.AddWithValue("@minPrice", minPrice ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@maxPrice", maxPrice ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@offset", offset);
-                        cmd.Parameters.AddWithValue("@pageSize", pageSize);
-                        cmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : (object)searchTerm);
-
-                        using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                Products prod = new Products
-                                {
-                                    ProductId = reader.GetInt32(0),
-                                    Name = reader.GetString(1),
-                                    Description = reader.GetString(2),
-                                    ImageURL = reader.GetString(3),
-                                    Price = reader.GetDecimal(4),
-                                    ConnectionType = reader.GetString(5),
-                                    WearingStyle = reader.GetString(6),
-                                    Brand = reader.GetString(7)
-                                };
-                                products.Add(prod);
-                            }
-                        }
-                    }
-
-                    // Получение общего числа товаров для расчёта количества страниц
-                    string countQuery = @"
-                    SELECT COUNT(*) 
-                    FROM Products
-                    WHERE 
-                    (@searchTerm IS NULL OR Name LIKE '%' + @searchTerm + '%')
-                    AND (@brand IS NULL OR Brand IN (SELECT value FROM STRING_SPLIT(@brand, ',')))
-                    AND (@connectionType IS NULL OR ConnectionType IN (SELECT value FROM STRING_SPLIT(@connectionType, ',')))
-                    AND (@wearingStyle IS NULL OR WearingStyle IN (SELECT value FROM STRING_SPLIT(@wearingStyle, ',')))
-                    AND (@minPrice IS NULL OR Price >= @minPrice)
-                    AND (@maxPrice IS NULL OR Price <= @maxPrice)";
-
-                    int totalProducts = 0;
-                    using (SqlCommand countCmd = new SqlCommand(countQuery, conn))
-                    {
-                        countCmd.Parameters.AddWithValue("@brand", string.IsNullOrEmpty(brand) ? DBNull.Value : (object)brand);
-                        countCmd.Parameters.AddWithValue("@connectionType", string.IsNullOrEmpty(connectionType) ? DBNull.Value : (object)connectionType);
-                        countCmd.Parameters.AddWithValue("@wearingStyle", string.IsNullOrEmpty(wearingStyle) ? DBNull.Value : (object)wearingStyle);
-                        countCmd.Parameters.AddWithValue("@minPrice", minPrice ?? (object)DBNull.Value);
-                        countCmd.Parameters.AddWithValue("@maxPrice", maxPrice ?? (object)DBNull.Value);
-                        countCmd.Parameters.AddWithValue("@searchTerm", string.IsNullOrEmpty(searchTerm) ? DBNull.Value : (object)searchTerm);
-
-                        totalProducts = (int)await countCmd.ExecuteScalarAsync();
-                    }
-
-                    int totalPages = (int)Math.Ceiling(totalProducts / (double)pageSize);
-
-                    var result = new
-                    {
-                        TotalProducts = totalProducts,
-                        Page = page,
-                        PageSize = pageSize,
-                        TotalPages = totalPages,
-                        Products = products
-                    };
-
-                    return Ok(result);
-
-                }
+                var brands = brand.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                query = query.Where(p => brands.Contains(p.Brand));
             }
-            catch (Exception ex)
+
+            if (!string.IsNullOrEmpty(connectionType))
             {
-                return StatusCode(500, new
-                {
-                    error = "Внутренняя ошибка сервера",
-                    details = ex.Message
-                });
+                var connectionTypes = connectionType.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                query = query.Where(p => connectionTypes.Contains(p.ConnectionType));
             }
+
+            if (!string.IsNullOrEmpty(wearingStyle))
+            {
+                var styles = wearingStyle.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                query = query.Where(p => styles.Contains(p.WearingStyle));
+            }
+
+            if (minPrice.HasValue)
+                query = query.Where(p => p.Price >= minPrice);
+
+            if (maxPrice.HasValue)
+                query = query.Where(p => p.Price <= maxPrice);
+
+            // Пагинация
+            int totalProducts = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalProducts / (double)pageSize);
+
+            var products = await query
+                .OrderBy(p => p.ProductId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                TotalProducts = totalProducts,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                Products = products
+            });
         }
     }
 }

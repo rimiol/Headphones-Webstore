@@ -1,24 +1,35 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
-namespace Headphones_Webstore.Models
+public class Products
 {
-    public class Products
-    {
-        [Key]
-        public int ProductId { get; set; }
+    [Key]
+    public int ProductId { get; set; }
 
-        public required string Name { get; set; }
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; }
 
-        public required string Description { get; set; }
+    [Required]
+    [StringLength(500)]
+    public string Description { get; set; }
 
-        public required string ImageURL { get; set; }
+    [Required]
+    public string ImageURL { get; set; }
 
-        public required decimal Price { get; set; }
+    [Required]
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Price { get; set; }
 
-        public required string ConnectionType { get; set; }
+    [Required]
+    [StringLength(50)]
+    public string ConnectionType { get; set; }
 
-        public required string WearingStyle { get; set; }
+    [Required]
+    [StringLength(50)]
+    public string WearingStyle { get; set; }
 
-        public required string Brand { get; set; }
-    }
+    [Required]
+    [StringLength(50)]
+    public string Brand { get; set; }
 }

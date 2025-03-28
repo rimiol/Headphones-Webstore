@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Headphones_Webstore.Data;
+using Microsoft.Extensions.Logging;
 
 namespace Headphones_Webstore.Controllers
 {
@@ -12,63 +13,130 @@ namespace Headphones_Webstore.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<AddItemController> _logger;
 
         public AddItemController(
             ApplicationDbContext context,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            ILogger<AddItemController> logger)
         {
             _context = context;
             _env = env;
+            _logger = logger;
         }
 
         [HttpPost]
         public async Task<IActionResult> AddProduct([FromBody] ProductDto productDto)
         {
-            // Проверка уникальности названия
-            if (await _context.Products.AnyAsync(p => p.Name == productDto.Name))
-            {
-                return BadRequest(new
-                {
-                    type = "name",
-                    message = "Товар с таким названием уже существует"
-                });
-            }
-
-            // Нормализация пути к изображению
-            var imageUrl = productDto.ImageURL.TrimStart('/');
-            var imagePath = Path.Combine(_env.WebRootPath, imageUrl);
-
-            if (!System.IO.File.Exists(imagePath))
-            {
-                return BadRequest(new
-                {
-                    type = "imageURL",
-                    message = $"Файл '{imageUrl}' не найден в папке wwwroot. Путь: {imagePath}"
-                });
-            }
-
-            // Создание и сохранение товара
-            var product = new Products
-            {
-                Name = productDto.Name,
-                Description = productDto.Description,
-                ImageURL = imageUrl,
-                Price = productDto.Price,
-                ConnectionType = productDto.ConnectionType,
-                WearingStyle = productDto.WearingStyle,
-                Brand = productDto.Brand
-            };
-
             try
             {
+                // Валидация модели
+                var imageUrl = productDto.ImageURL?.Trim();
+                if (string.IsNullOrWhiteSpace(imageUrl))
+                {
+                    return BadRequest(new
+                    {
+                        type = "imageURL",
+                        message = "URL изображения обязателен"
+                    });
+                }
+
+                imageUrl = imageUrl.StartsWith("~/") ? imageUrl[2..] : imageUrl;
+                var webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+                var fullPath = Path.Combine(webRootPath, imageUrl.Replace('/', Path.DirectorySeparatorChar));
+
+                Console.WriteLine($"WebRootPath: {webRootPath}");
+                Console.WriteLine($"Requested image path: {fullPath}");
+
+                if (!System.IO.File.Exists(fullPath))
+                {
+                    return NotFound(new
+                    {
+                        type = "imageURL",
+                        message = "Файл изображения не найден",
+                        details = new
+                        {
+                            requestedPath = imageUrl,
+                            fullPhysicalPath = fullPath,
+                            webRootExists = Directory.Exists(webRootPath)
+                        }
+                    });
+                }
+
+                // Проверка уникальности названия
+                var normalizedName = productDto.Name.Trim().ToLower();
+                bool nameExists = await _context.Products
+                    .AnyAsync(p => p.Name.ToLower() == normalizedName);
+
+                if (nameExists)
+                {
+                    return Conflict(new
+                    {
+                        type = "name",
+                        message = "Товар с таким названием уже существует"
+                    });
+                }
+
+                // Создание объекта продукта
+                var product = new Products
+                {
+                    Name = productDto.Name.Trim(),
+                    Description = productDto.Description.Trim(),
+                    ImageURL = imageUrl,
+                    Price = productDto.Price,
+                    ConnectionType = productDto.ConnectionType.Trim(),
+                    WearingStyle = productDto.WearingStyle.Trim(),
+                    Brand = productDto.Brand.Trim()
+                };
+
+                // Сохранение в базе данных
                 _context.Products.Add(product);
                 await _context.SaveChangesAsync();
-                return Ok(new { message = "Товар успешно добавлен!", productId = product.ProductId });
+
+                return CreatedAtAction(nameof(GetProduct), new { id = product.ProductId }, new
+                {
+                    message = "Товар успешно добавлен",
+                    productId = product.ProductId,
+                    details = new
+                    {
+                        product.Name,
+                        product.Price,
+                        product.ImageURL
+                    }
+                });
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException dbEx)
             {
-                return StatusCode(500, "Ошибка базы данных: " + ex.Message);
+                _logger.LogError(dbEx, "Database error while adding product");
+                return StatusCode(500, new
+                {
+                    type = "database",
+                    message = "Ошибка базы данных",
+                    details = dbEx.InnerException?.Message ?? dbEx.Message
+                });
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Server error while adding product");
+                return StatusCode(500, new
+                {
+                    type = "server",
+                    message = "Внутренняя ошибка сервера",
+                    details = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProduct(int id)
+        {
+            var product = await _context.Products
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ProductId == id);
+
+            return product == null
+                ? NotFound(new { message = "Товар не найден" })
+                : Ok(product);
         }
     }
 
