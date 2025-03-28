@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавление товара | United Audio</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/add-item.css">
+    <link rel="stylesheet" href="css/add-item.css?v=@version">
     <link href="https://fonts.googleapis.com/css2?family=Minerva+Modern:ital,wght@1,700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -26,18 +26,70 @@
         </div>
     </header>
 
-    <main class="add-item-container">
-        <h1>Добавление товара</h1>
-        <form action="submit-item.php" method="POST" class="add-item-form">
-            <input type="text" name="name" placeholder="Название товара" required>
-            <textarea name="description" placeholder="Описание товара" required></textarea>
-            <input type="url" name="image" placeholder="Ссылка на изображение" required>
-            <input type="number" name="price" placeholder="Цена" required>
-            <input type="text" name="type" placeholder="Вид" required>
-            <input type="text" name="category" placeholder="Категория" required>
-            <input type="text" name="brand" placeholder="Бренд" required>
-            <button type="submit">Добавить</button>
-        </form>
+    <main class="add-item">
+        <div class="container">
+            <h1>Добавление нового товара</h1>
+            <form id="addProductForm">
+                <div class="form-group">
+                    <label for="name">Название товара:</label>
+                    <input type="text" id="name" name="name" required>
+                    <div class="error-message" id="nameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Описание:</label>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+                    <div class="error-message" id="descriptionError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="imageURL">URL изображения:</label>
+                    <input type="text" id="imageURL" name="imageURL" required>
+                    <div class="error-message" id="imageURLError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="price">Цена (руб):</label>
+                    <input type="number" id="price" name="price" min="0" step="0.01" required>
+                    <div class="error-message" id="priceError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="connectionType">Способ подключения:</label>
+                    <select id="connectionType" name="connectionType" required>
+                        <option value="Проводные">Проводные</option>
+                        <option value="Беспроводные">Беспроводные</option>
+                    </select>
+                    <div class="error-message" id="connectionTypeError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="wearingStyle">Способ ношения:</label>
+                    <select id="wearingStyle" name="wearingStyle" required>
+                        <option value="Полноразмерные">Полноразмерные</option>
+                        <option value="Накладные">Накладные</option>
+                        <option value="Внутриканальные">Внутриканальные</option>
+                    </select>
+                    <div class="error-message" id="wearingStyleError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="brand">Бренд:</label>
+                    <select id="brand" name="brand" required>
+                        <option value="Audio-Technica">Audio-Technica</option>
+                        <option value="Sony">Sony</option>
+                        <option value="Beyerdynamic">Beyerdynamic</option>
+                        <option value="Sennheiser">Sennheiser</option>
+                        <option value="JBL">JBL</option>
+                        <option value="AKG">AKG</option>
+                    </select>
+                    <div class="error-message" id="brandError"></div>
+                </div>
+
+                <button type="submit" class="submit-btn">Добавить товар</button>
+                <div id="formMessage"></div>
+            </form>
+        </div>
     </main>
 
     <footer>
@@ -60,5 +112,9 @@
             <p class="footer-copy">&copy; 2024 United Audio. Все права защищены.</p>
         </div>
     </footer>
+
+    <!--Подключение скриптов-->
+    <script src="js/add-item.js"></script>
+
 </body>
 </html>

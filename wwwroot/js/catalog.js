@@ -1,8 +1,4 @@
-﻿//document.addEventListener('DOMContentLoaded', function () {
-//    loadProducts(1);
-//});
-
-document.addEventListener('DOMContentLoaded', function () {
+﻿document.addEventListener('DOMContentLoaded', function () {
     loadProducts(1);
     fetch('/api/cart/count')
         .then(response => response.json())
@@ -24,7 +20,6 @@ function getSelectedValues(selector) {
 }
 
 function getFilters() {
-    // Используем индексы категорий
     const connectionCheckboxes = Array.from(document.querySelectorAll('.sidebar-filter-category:nth-child(2) input[type="checkbox"]:checked'));
     const wearingCheckboxes = Array.from(document.querySelectorAll('.sidebar-filter-category:nth-child(3) input[type="checkbox"]:checked'));
 
@@ -50,7 +45,7 @@ searchInput.addEventListener('input', function () {
 });
 
 document.getElementById('apply-filters').addEventListener('click', function () {
-    loadProducts(1); // начало с 1 страницы
+    loadProducts(1);
 });
 
 function loadProducts(page) {
@@ -82,18 +77,6 @@ function loadProducts(page) {
         });
 }
 
-//function updateProductList(products) {
-//    const container = document.getElementById('productContainer');
-//    container.innerHTML = products.map(product => `
-//        <div class="product-item">
-//            <img src="${product.imageURL}" alt="${product.name}">
-//            <p>${product.name}</p>
-//            <p>Цена: ${product.price} ₽</p>
-//            <button class="add-to-cart">Добавить в корзину</button>
-//        </div>
-//    `).join('');
-//}
-
 function updateProductList(products) {
     const container = document.getElementById('productContainer');
     container.innerHTML = products.map(product => `
@@ -109,7 +92,7 @@ function updateProductList(products) {
 document.getElementById('productContainer').addEventListener('click', function (e) {
     if (e.target.classList.contains('add-to-cart')) {
         const productItem = e.target.closest('.product-item');
-        const productId = productItem.dataset.productId; // Нужно добавить data-атрибут в разметку
+        const productId = productItem.dataset.productId;
 
         fetch('/api/cart/add', {
             method: 'POST',
@@ -135,7 +118,7 @@ document.getElementById('productContainer').addEventListener('click', function (
 //ПАГИНАЦИЯ
 function generatePagination(totalPages, currentPage) {
     const pagination = document.getElementById('pagination');
-    pagination.innerHTML = ''; // Очистка блока пагинации
+    pagination.innerHTML = '';
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
         btn.classList.add('page-btn');

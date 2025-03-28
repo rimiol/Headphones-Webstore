@@ -1,47 +1,129 @@
-.add-item-container {
-    max-width: 500px;
-    margin: 50px auto;
+.add-item .container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.add-item h1 {
     text-align: center;
+    margin: 1rem 0 2rem;
+    color: #2d3748;
+    font-size: 1.8rem;
+    font-weight: 600;
 }
 
-.add-item-container h1 {
-    font-family: 'Minerva Modern', sans-serif;
-    font-size: 24px;
-    margin-top: 20px;
-    margin-bottom: 20px;
+.form-group {
+    margin-bottom: 1.2rem;
 }
 
-.add-item-form {
-    display: flex;
-    flex-direction: column;
-}
+    .form-group label {
+        display: block;
+        margin-bottom: 0.4rem;
+        color: #4a5568;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
 
-.add-item-form input,
-.add-item-form textarea {
+    .form-group input,
+    .form-group textarea{
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background: white;
+        transition: border-color 0.2s;
+        resize: vertical;
+    }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #4299e1;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.1);
+        }
+
+    .form-group select {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background: white;
+        cursor: pointer;
+        /* Возвращаем стандартное поведение */
+        appearance: auto;
+        -webkit-appearance: menulist;
+        -moz-appearance: menulist;
+    }
+
+    /* Убираем кастомные фоны */
+    .form-group select {
+        background-image: none !important;
+        padding-right: 0.8rem !important;
+    }
+
+.submit-btn {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
-}
-
-.add-item-form textarea {
-    resize: vertical;
-    height: 100px;
-}
-
-.add-item-form button {
-    background-color: #1185d7;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    background: #4299e1;
     color: white;
-    padding: 10px;
-    font-size: 18px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: 0.3s;
+    transition: background 0.2s;
 }
 
-.add-item-form button:hover {
-    background-color: #444;
+    .submit-btn:hover {
+        background: #3182ce;
+    }
+
+.error-message {
+    font-size: 0.8rem;
+    color: #e53e3e;
+    margin-top: 0.3rem;
+    display: none;
 }
+
+    .error-message.show {
+        display: block;
+    }
+
+#formMessage {
+    margin: 1rem 0 0;
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+/* Добавить стиль для ошибок */
+.error-border {
+    border: 2px solid #ff4444 !important;
+}
+
+#imageURLError {
+    color: #ff4444;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+    .add-item .container {
+        margin: 1rem;
+        padding: 1.2rem;
+    }
+
+    .add-item h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+}
+

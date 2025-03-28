@@ -21,6 +21,9 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+
+app.UseCors("AllowAll");
+
 // Добавление middleware Swagger
 if (app.Environment.IsDevelopment())
 {

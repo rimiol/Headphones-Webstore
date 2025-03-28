@@ -99,7 +99,6 @@ namespace Headphones_Webstore.Controllers
                 return sessionCookie;
             }
 
-            // Создаем новую сессию
             var newSessionId = Guid.NewGuid();
             Response.Cookies.Append("SessionID", newSessionId.ToString(), new CookieOptions
             {

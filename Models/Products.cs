@@ -5,7 +5,7 @@ namespace Headphones_Webstore.Models
     public class Products
     {
         [Key]
-        public required int ProductId { get; set; }
+        public int ProductId { get; set; }
 
         public required string Name { get; set; }
 
