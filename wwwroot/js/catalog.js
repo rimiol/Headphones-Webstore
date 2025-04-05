@@ -1,9 +1,74 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     loadProducts(1);
-    fetch('/api/cart/count')
+    fetch('/api/cart/count', {
+        credentials: 'include'
+    })
         .then(response => response.json())
         .then(data => updateCartCounter(data.totalItems))
-        .catch(() => updateCartCounter(0));
+        .catch(() => updateCartCounter(0))
+});
+
+const searchInput = document.querySelector('.sidebar-search');
+const suggestionsContainer = document.getElementById('autocompleteSuggestions');
+let searchTimer;
+
+// Обработчик ввода для поисковых подсказок
+searchInput.addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    const searchTerm = this.value.trim();
+
+    if (searchTerm.length === 0) {
+        hideSuggestions();
+        return;
+    }
+
+    searchTimer = setTimeout(() => fetchSuggestions(searchTerm), 300);
+});
+
+// Получение подсказок с сервера
+function fetchSuggestions(searchTerm) {
+    fetch(`/api/products/suggestions?searchTerm=${encodeURIComponent(searchTerm)}`, {
+        credentials: 'include' // Исправлено: параметры должны быть внутри объекта
+    })
+        .then(response => response.json())
+        .then(suggestions => showSuggestions(suggestions))
+        .catch(error => console.error('Error:', error));
+}
+
+// Отображение подсказок
+function showSuggestions(suggestions) {
+    suggestionsContainer.innerHTML = '';
+
+    if (suggestions.length === 0) {
+        hideSuggestions();
+        return;
+    }
+
+    suggestions.forEach(suggestion => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.innerHTML = `
+        <div class="suggestion-name">${suggestion.name}</div>
+        `;
+        div.addEventListener('click', () => {
+            window.location.href = `/product.html?productId=${suggestion.id}`;
+        });
+        suggestionsContainer.appendChild(div);
+    });
+
+    suggestionsContainer.style.display = 'block';
+}
+
+// Скрытие подсказок
+function hideSuggestions() {
+    suggestionsContainer.style.display = 'none';
+}
+
+// Закрытие подсказок при клике вне области
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.sidebar-search-container')) {
+        hideSuggestions();
+    }
 });
 
 function updateCartCounter(count) {
@@ -20,47 +85,57 @@ function getSelectedValues(selector) {
 }
 
 function getFilters() {
-    const connectionCheckboxes = Array.from(document.querySelectorAll('.sidebar-filter-category:nth-child(2) input[type="checkbox"]:checked'));
-    const wearingCheckboxes = Array.from(document.querySelectorAll('.sidebar-filter-category:nth-child(3) input[type="checkbox"]:checked'));
+    const minPriceInput = document.getElementById('price-from');
+    const maxPriceInput = document.getElementById('price-to');
+
+    const minPrice = minPriceInput.value ? Number(minPriceInput.value) : null;
+    const maxPrice = maxPriceInput.value ? Number(maxPriceInput.value) : null;
+
+    if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+        alert('Минимальная цена не может быть больше максимальной!');
+        minPriceInput.value = maxPrice;
+        maxPriceInput.value = minPrice;
+        return getFilters();
+    }
 
     return {
-        connectionType: connectionCheckboxes.map(cb => cb.value),
-        wearingStyle: wearingCheckboxes.map(cb => cb.value),
-        brands: Array.from(document.querySelectorAll('#brand-filters input[type="checkbox"]:checked')).map(cb => cb.value),
-        minPrice: document.getElementById('price-from').value ?
-            Number(document.getElementById('price-from').value) : null,
-        maxPrice: document.getElementById('price-to').value ?
-            Number(document.getElementById('price-to').value) : null,
+        connectionType: getSelectedValues('.sidebar-filter-category:nth-child(2) input[type="checkbox"]:checked'),
+        wearingStyle: getSelectedValues('.sidebar-filter-category:nth-child(3) input[type="checkbox"]:checked'),
+        brands: getSelectedValues('#brand-filters input[type="checkbox"]:checked'),
+        minPrice: minPrice,
+        maxPrice: maxPrice,
         searchTerm: document.querySelector('.sidebar-search').value.trim()
     };
 }
 
-//ОБРАБОТЧИК ПОИСКА
-const searchInput = document.querySelector('.sidebar-search');
-let searchTimer;
-
-searchInput.addEventListener('input', function () {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => loadProducts(1), 300);
-});
-
+// Обработчик применения фильтров
 document.getElementById('apply-filters').addEventListener('click', function () {
     loadProducts(1);
 });
 
 function loadProducts(page) {
     const filters = getFilters();
-    const queryParams = new URLSearchParams({
-        page: page,
-        searchTerm: filters.searchTerm,
-        ...(filters.connectionType.length > 0 && { connectionType: filters.connectionType.join(',') }),
-        ...(filters.wearingStyle.length > 0 && { wearingStyle: filters.wearingStyle.join(',') }),
-        ...(filters.brands.length > 0 && { brand: filters.brands.join(',') }),
-        ...(filters.minPrice && { minPrice: filters.minPrice }),
-        ...(filters.maxPrice && { maxPrice: filters.maxPrice })
-    }).toString();
 
-    fetch(`/api/products?${queryParams}`)
+    const params = {
+        page: page,
+        searchTerm: filters.searchTerm || '',
+        connectionType: filters.connectionType.join(','),
+        wearingStyle: filters.wearingStyle.join(','),
+        brand: filters.brands.join(','),
+        minPrice: filters.minPrice || '',
+        maxPrice: filters.maxPrice || ''
+    };
+
+    Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === null)
+            delete params[key];
+    });
+
+    const queryParams = new URLSearchParams(params).toString();
+
+    fetch(`/api/products?${queryParams}`, {
+        credentials: 'include'
+    })
         .then(response => {
             if (!response.ok) {
                 return response.text().then(text => { throw new Error(text) });
@@ -79,43 +154,64 @@ function loadProducts(page) {
 
 function updateProductList(products) {
     const container = document.getElementById('productContainer');
-    container.innerHTML = products.map(product => `
-        <div class="product-item" data-product-id="${product.productId}">
-            <img src="${product.imageURL}" alt="${product.name}">
-            <p>${product.name}</p>
-            <p>Цена: ${product.price} ₽</p>
-            <button class="add-to-cart">Добавить в корзину</button>
-        </div>
-    `).join('');
+
+    if (products.length === 0) {
+        container.innerHTML = `
+            <div class="no-results">
+                <p>По вашему запросу ничего не найдено</p>
+            </div>
+        `;
+    } else {
+        container.innerHTML = products.map(product => `
+            <div class="product-item" data-product-id="${product.productId}">
+                <img src="${product.imageURL}" alt="${product.name}">
+                <p>${product.name}</p>
+                <p>Цена: ${product.price} ₽</p>
+                <div class="product-actions">
+                    <button class="add-to-cart">Добавить в корзину</button>
+                    <a href="product.html?productId=${product.productId}" class="details-link">Подробнее</a>
+                </div>
+            </div>
+        `).join('');
+    }
 }
 
+// Обработчик добавления в корзину
 document.getElementById('productContainer').addEventListener('click', function (e) {
     if (e.target.classList.contains('add-to-cart')) {
         const productItem = e.target.closest('.product-item');
         const productId = productItem.dataset.productId;
+
+        console.log('Добавление товара ID:', productId);
 
         fetch('/api/cart/add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({ productId: parseInt(productId) })
         })
             .then(response => {
-                if (!response.ok) throw new Error('Ошибка добавления');
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Ошибка: ${response.status} (${text})`);
+                    });
+                }
                 return response.json();
             })
             .then(data => {
+                console.log('Ответ сервера:', data);
                 updateCartCounter(data.totalItems);
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Ошибка:', error);
                 alert(error.message);
             });
     }
 });
 
-//ПАГИНАЦИЯ
+// Пагинация
 function generatePagination(totalPages, currentPage) {
     const pagination = document.getElementById('pagination');
     pagination.innerHTML = '';

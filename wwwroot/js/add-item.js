@@ -1,12 +1,10 @@
 document.getElementById('addProductForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    // Сброс сообщений
     resetErrors();
     const formMessage = document.getElementById('formMessage');
     hideElement(formMessage);
 
-    // Валидация цены
     const priceInput = document.getElementById('price');
     const price = parseFloat(priceInput.value);
     if (!validatePrice(price)) {
@@ -15,7 +13,6 @@ document.getElementById('addProductForm').addEventListener('submit', async funct
         return;
     }
 
-    // Сбор данных формы
     const formData = getFormData();
 
     try {
@@ -35,7 +32,6 @@ document.getElementById('addProductForm').addEventListener('submit', async funct
             return;
         }
 
-        // Успешное добавление
         handleSuccess(data);
 
     } catch (error) {
@@ -43,7 +39,6 @@ document.getElementById('addProductForm').addEventListener('submit', async funct
     }
 });
 
-// Вспомогательные функции
 function resetErrors() {
     document.querySelectorAll('.error-message').forEach(el => {
         el.textContent = '';

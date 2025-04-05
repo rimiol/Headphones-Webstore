@@ -66,8 +66,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
-app.UseCors("AllowAll");
+app.UseCors("AllowProduction");
 app.UseAuthorization();
 
 app.MapRazorPages();

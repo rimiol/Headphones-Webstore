@@ -14,9 +14,14 @@ namespace Headphones_Webstore.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public CartController(ApplicationDbContext context)
+        private readonly ILogger<CartController> _logger;
+
+        public CartController(
+            ApplicationDbContext context,
+            ILogger<CartController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpPost("add")]
@@ -24,16 +29,11 @@ namespace Headphones_Webstore.Controllers
         {
             try
             {
+                _logger.LogInformation($"Добавление товара {request.ProductId} в корзину");
                 var session = await GetOrCreateSession();
                 if (session == null) return BadRequest("Ошибка сессии");
 
-                // Проверка существования товара
-                var productExists = await _context.Products
-                    .AnyAsync(p => p.ProductId == request.ProductId);
-
-                if (!productExists) return NotFound("Товар не найден");
-
-                // Поиск существующей записи
+                // Находим существующий товар в корзине с учетом сессии
                 var cartItem = await _context.CartItems
                     .FirstOrDefaultAsync(ci =>
                         ci.SessionID == session.SessionID &&
@@ -41,7 +41,8 @@ namespace Headphones_Webstore.Controllers
 
                 if (cartItem != null)
                 {
-                    cartItem.Quantity++;
+                    cartItem.Quantity += 1; // Увеличиваем количество
+                    _context.CartItems.Update(cartItem);
                 }
                 else
                 {
@@ -56,7 +57,7 @@ namespace Headphones_Webstore.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Получение общего количества
+                // Получаем обновленное количество
                 var totalItems = await _context.CartItems
                     .Where(ci => ci.SessionID == session.SessionID)
                     .SumAsync(ci => ci.Quantity);
@@ -65,6 +66,7 @@ namespace Headphones_Webstore.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Ошибка при добавлении в корзину");
                 return StatusCode(500, new
                 {
                     error = "Внутренняя ошибка сервера",
@@ -90,7 +92,7 @@ namespace Headphones_Webstore.Controllers
         {
             var sessionId = Request.Cookies["SessionID"];
 
-            // Существующая сессия
+            // Проверяем существующую сессию
             if (Guid.TryParse(sessionId, out var sessionGuid))
             {
                 var existingSession = await _context.Sessions
@@ -99,7 +101,7 @@ namespace Headphones_Webstore.Controllers
                 if (existingSession != null) return existingSession;
             }
 
-            // Создание новой сессии
+            // Создаем новую сессию
             var newSession = new Sessions
             {
                 SessionID = Guid.NewGuid(),
@@ -109,12 +111,13 @@ namespace Headphones_Webstore.Controllers
             _context.Sessions.Add(newSession);
             await _context.SaveChangesAsync();
 
+            // Исправленные параметры куки
             Response.Cookies.Append("SessionID", newSession.SessionID.ToString(), new CookieOptions
             {
                 Expires = DateTime.UtcNow.AddDays(7),
                 HttpOnly = true,
                 IsEssential = true,
-                Secure = true,
+                Secure = false,
                 SameSite = SameSiteMode.Lax
             });
 
